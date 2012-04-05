@@ -35,15 +35,11 @@ GLfloat	z=0.0f;
 
 GLuint	filter;			
 GLuint	texture[3];	
+GLuint	texture2[3];	
 
 int main_window;
 
 
-//  Idle callack function
-void idle ();
-//  Declare callbacks related to GLUI
-void glui_callback (int arg);
-GLUI *glui_window;
 //struktura za 3D vektor
 typedef struct tVector3					
 {			
@@ -319,30 +315,38 @@ int DrawGLScene(GLvoid)
 	numtriangles = sector1.numtriangles;
 	
 	// narisemo vse trikotnike
-	for (int loop_m = 0; loop_m < numtriangles; loop_m++)
+	for (int i = 0; i < numtriangles; i++)
 	{
+		if (i > 3)
+		{
+			glBindTexture(GL_TEXTURE_2D, texture2[filter]);
+		}
+
 		glBegin(GL_TRIANGLES);
 			glNormal3f( 0.0f, 0.0f, 1.0f);
-			x_m = sector1.triangle[loop_m].vertex[0].x;
-			y_m = sector1.triangle[loop_m].vertex[0].y;
-			z_m = sector1.triangle[loop_m].vertex[0].z;
-			u_m = sector1.triangle[loop_m].vertex[0].u;
-			v_m = sector1.triangle[loop_m].vertex[0].v;
-			glTexCoord2f(u_m,v_m); glVertex3f(x_m,y_m,z_m);
+			x_m = sector1.triangle[i].vertex[0].x;
+			y_m = sector1.triangle[i].vertex[0].y;
+			z_m = sector1.triangle[i].vertex[0].z;
+			u_m = sector1.triangle[i].vertex[0].u;
+			v_m = sector1.triangle[i].vertex[0].v;
+			glTexCoord2f(u_m,v_m); 
+			glVertex3f(x_m,y_m,z_m);
 			
-			x_m = sector1.triangle[loop_m].vertex[1].x;
-			y_m = sector1.triangle[loop_m].vertex[1].y;
-			z_m = sector1.triangle[loop_m].vertex[1].z;
-			u_m = sector1.triangle[loop_m].vertex[1].u;
-			v_m = sector1.triangle[loop_m].vertex[1].v;
-			glTexCoord2f(u_m,v_m); glVertex3f(x_m,y_m,z_m);
+			x_m = sector1.triangle[i].vertex[1].x;
+			y_m = sector1.triangle[i].vertex[1].y;
+			z_m = sector1.triangle[i].vertex[1].z;
+			u_m = sector1.triangle[i].vertex[1].u;
+			v_m = sector1.triangle[i].vertex[1].v;
+			glTexCoord2f(u_m,v_m); 
+			glVertex3f(x_m,y_m,z_m);
 			
-			x_m = sector1.triangle[loop_m].vertex[2].x;
-			y_m = sector1.triangle[loop_m].vertex[2].y;
-			z_m = sector1.triangle[loop_m].vertex[2].z;
-			u_m = sector1.triangle[loop_m].vertex[2].u;
-			v_m = sector1.triangle[loop_m].vertex[2].v;
-			glTexCoord2f(u_m,v_m); glVertex3f(x_m,y_m,z_m);
+			x_m = sector1.triangle[i].vertex[2].x;
+			y_m = sector1.triangle[i].vertex[2].y;
+			z_m = sector1.triangle[i].vertex[2].z;
+			u_m = sector1.triangle[i].vertex[2].u;
+			v_m = sector1.triangle[i].vertex[2].v;
+			glTexCoord2f(u_m,v_m); 
+			glVertex3f(x_m,y_m,z_m);
 		glEnd();
 	}
 
@@ -372,36 +376,67 @@ AUX_RGBImageRec *LoadBMP(char* Filename, LPWSTR Filename1)
 
 int LoadGLTextures() 
 {
-	 int Status=FALSE;                               
+	 int Status=FALSE;  
+	 int Status2 = FALSE;
 
-        AUX_RGBImageRec *TextureImage[1];               
+        AUX_RGBImageRec *TextureImage[1];  
+		AUX_RGBImageRec *TextureImage2[1];  
 
-        memset(TextureImage,0,sizeof(void *)*1);        
+        memset(TextureImage,0,sizeof(void *)*1);
+		memset(TextureImage2,0,sizeof(void *)*1);
 
 
-        if (TextureImage[0]=LoadBMP("Data/bricks2.bmp", L"Data/bricks2.bmp"))
+        if (TextureImage[0]=LoadBMP("Data/bricks.bmp", L"Data/bricks.bmp"))
         {
                 Status=TRUE;                            
 
                 glGenTextures(3, &texture[0]);          
 
-				
 				glBindTexture(GL_TEXTURE_2D, texture[0]);
 				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 				glTexImage2D(GL_TEXTURE_2D, 0, 3, TextureImage[0]->sizeX, TextureImage[0]->sizeY, 0, GL_RGB, GL_UNSIGNED_BYTE, TextureImage[0]->data);
-
                 
                 glBindTexture(GL_TEXTURE_2D, texture[1]);
                 glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
                 glTexImage2D(GL_TEXTURE_2D, 0, 3, TextureImage[0]->sizeX, TextureImage[0]->sizeY, 0, GL_RGB, GL_UNSIGNED_BYTE, TextureImage[0]->data);
 
-				
 				glBindTexture(GL_TEXTURE_2D, texture[2]);
 				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST);
 				gluBuild2DMipmaps(GL_TEXTURE_2D, 3, TextureImage[0]->sizeX, TextureImage[0]->sizeY, GL_RGB, GL_UNSIGNED_BYTE, TextureImage[0]->data);
+        }
+		 if (TextureImage2[0]=LoadBMP("Data/bricks2.bmp", L"Data/bricks2.bmp"))
+        {
+                Status2=TRUE;                            
+
+                glGenTextures(3, &texture2[0]);          
+
+				glBindTexture(GL_TEXTURE_2D, texture2[0]);
+				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+				glTexImage2D(GL_TEXTURE_2D, 0, 3, TextureImage2[0]->sizeX, TextureImage2[0]->sizeY, 0, GL_RGB, GL_UNSIGNED_BYTE, TextureImage2[0]->data);
+                
+                glBindTexture(GL_TEXTURE_2D, texture2[1]);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+                glTexImage2D(GL_TEXTURE_2D, 0, 3, TextureImage2[0]->sizeX, TextureImage2[0]->sizeY, 0, GL_RGB, GL_UNSIGNED_BYTE, TextureImage2[0]->data);
+
+				
+				glBindTexture(GL_TEXTURE_2D, texture2[2]);
+				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST);
+				gluBuild2DMipmaps(GL_TEXTURE_2D, 3, TextureImage2[0]->sizeX, TextureImage2[0]->sizeY, GL_RGB, GL_UNSIGNED_BYTE, TextureImage2[0]->data);
+        }
+		 if (TextureImage2[0]) 
+        {
+                if (TextureImage2[0]->data)              
+                {
+                        free(TextureImage2[0]->data);    
+                }
+
+                free(TextureImage2[0]);                  
         }
         if (TextureImage[0]) 
         {
@@ -661,25 +696,6 @@ LRESULT CALLBACK WndProc(	HWND	hWnd,			UINT	uMsg,			WPARAM	wParam,			LPARAM	lPar
 
 	
 	return DefWindowProc(hWnd,uMsg,wParam,lParam);
-}
-void buttonCallbackStart(int id)
-{
-
-}
-
-void buttonCallbackExit(int id)
-{
-
-
-}
-
-void setupGLUI()
-{
-	GLUI_Master.set_glutIdleFunc (idle);
-	glui_window = GLUI_Master.create_glui("GUI", 0,0,0);	
-
-	
-	glui_window->set_main_gfx_window(main_window);
 }
 
 
