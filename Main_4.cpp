@@ -13,9 +13,8 @@
 using namespace std;
 
 const int ESCAPE=27;
-#define CAMERASPEED	0.005f	
-#define BULLETSPEED 0.01f
-
+const float CAMERASPEED	= 0.005f;	
+#define BULLETSPEED 0.01f
 #define EPSILON 1.0e-8
 #define ZERO EPSILON
 
@@ -24,8 +23,8 @@ HGLRC		hRC=NULL;
 HWND		hWnd=NULL;		
 HINSTANCE	hInstance;		
 
-int mouse_x;
-int mouse_y;
+double mouse_x;
+double mouse_y;
 
 bool	keys[256];			
 bool	active=TRUE;		
@@ -44,6 +43,7 @@ GLfloat	z=0.0f;
 GLuint	filter;			
 GLuint	texture[3];	
 GLuint	texture2[3];	
+GLuint	texture3[3];
 
 int main_window;
 bool sekanje=false;
@@ -209,13 +209,14 @@ int Collision_Detection(Plane plane, Vector3 position, Vector3 &direction, doubl
 void Move_Camera(float speed)	//za naprej in nazaj premikanje
 {
 	Vector3 vVector = mView - mPos;	
+	vVector = vVector.normalizacija(vVector);//Vector3 vVector2 = Vector3.normalizacija(vVector);
 	
 	mPos.x  = mPos.x  + vVector.x * speed;
 	mPos.z  = mPos.z  + vVector.z * speed;
 	mView.x = mView.x + vVector.x * speed;
 	mView.z = mView.z + vVector.z * speed;
-	uveloc = vVector * speed;
 
+	uveloc = vVector * speed;
 	double rt,lamda=10000;
 	Vector3 norm;
 	Vector3 normal;
@@ -226,7 +227,7 @@ void Move_Camera(float speed)	//za naprej in nazaj premikanje
 	{ 
 		 mPos = playerPreviousPosition;
 		 mView = playerPreviousView;
-	}*/
+	}
 	int test2 = Collision_Detection(pl2,mPos,uveloc,rt,norm);
 	if (test2==1)
 			  { 
@@ -276,6 +277,7 @@ void Move_Camera(float speed)	//za naprej in nazaj premikanje
 	playerPosition = Vector3(mPos.x,mPos.y+0.2,mPos.z+0.1);
 	playerPreviousPosition = mPos;
 	playerPreviousView = mView;
+	*/
 }
 void Move_Camera_LR(float speed)	//za levo in desno premikanje
 {
@@ -359,14 +361,14 @@ void Keyboard_Input()
 
 	if((GetKeyState(VK_LEFT) & 0x80))
 	{	
-		Move_Camera_LR(-CAMERASPEED);
-		//Rotate_View(-CAMERASPEED);
+		//Move_Camera_LR(-CAMERASPEED);
+		Rotate_View(-CAMERASPEED);
 	}
 
 	if((GetKeyState(VK_RIGHT) & 0x80))
 	{
-		Move_Camera_LR(CAMERASPEED);
-		//Rotate_View( CAMERASPEED);
+		//Move_Camera_LR(CAMERASPEED);
+		Rotate_View( CAMERASPEED);
 	}
 
 	if((GetKeyState(ESCAPE) & 0x80))
@@ -478,13 +480,21 @@ int DrawGLScene(GLvoid)
 	glBindTexture(GL_TEXTURE_2D, texture[filter]);
 	
 	numtriangles = sector1.numtriangles;
-	/*
+	
 	// narisemo vse trikotnike
 	for (int i = 0; i < numtriangles; i++)
 	{
-		if (i > 3)
+		if (i == 0 || i == 1)
+		{
+			glBindTexture(GL_TEXTURE_2D, texture[filter]);
+		}
+		else if (i == 2 || i== 3)
 		{
 			glBindTexture(GL_TEXTURE_2D, texture2[filter]);
+		}
+		else
+		{
+			glBindTexture(GL_TEXTURE_2D, texture3[filter]);
 		}
 
 		glBegin(GL_TRIANGLES);
@@ -514,7 +524,7 @@ int DrawGLScene(GLvoid)
 			glVertex3f(x_m,y_m,z_m);
 		glEnd();
 	}
-	*/
+	
 	//PLAYER - zaenkrat samo krogla
 	//glBegin(GL_QUADS);                     
 	//				glVertex3f(-0.5,0.5,0);		//1
@@ -526,6 +536,7 @@ int DrawGLScene(GLvoid)
 	
 					
 	//render walls(planes) with texture
+	/*
 	glBindTexture(GL_TEXTURE_2D, texture2[filter]); 
 
 	
@@ -562,7 +573,7 @@ int DrawGLScene(GLvoid)
 
 	glTranslatef(intersectionPoint.x, intersectionPoint.y, intersectionPoint.z);
 	glutSolidSphere (0.08, 1000, 1000);
-
+	*/
 	return TRUE; 
 
 }
@@ -570,7 +581,16 @@ int DrawGLScene(GLvoid)
 //ponavljajoèa se zanka
 void idle()
 {
-	
+	//preveri collision
+	if (mPos.x > 2.77 || mPos.x < -2.77 || mPos.z > 2.77 || mPos.z < -2.77)
+	{
+		
+		mPos = playerPreviousPosition;
+	}
+	else
+	{
+		playerPreviousPosition = mPos;
+	}
 	return;
 }
 
@@ -599,15 +619,18 @@ int LoadGLTextures()
 {
 	 int Status=FALSE;  
 	 int Status2 = FALSE;
+	 int Status3 = FALSE;
 
         AUX_RGBImageRec *TextureImage[1];  
 		AUX_RGBImageRec *TextureImage2[1];  
+		AUX_RGBImageRec *TextureImage3[1];  
 
         memset(TextureImage,0,sizeof(void *)*1);
 		memset(TextureImage2,0,sizeof(void *)*1);
+		memset(TextureImage3,0,sizeof(void *)*1);
 
 
-        if (TextureImage[0]=LoadBMP("Data/bricks.bmp", L"Data/bricks.bmp"))
+        if (TextureImage[0]=LoadBMP("Data/floor.bmp", L"Data/floor.bmp"))
         {
                 Status=TRUE;                            
 
@@ -628,7 +651,7 @@ int LoadGLTextures()
 				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST);
 				gluBuild2DMipmaps(GL_TEXTURE_2D, 3, TextureImage[0]->sizeX, TextureImage[0]->sizeY, GL_RGB, GL_UNSIGNED_BYTE, TextureImage[0]->data);
         }
-		 if (TextureImage2[0]=LoadBMP("Data/bricks2.bmp", L"Data/bricks2.bmp"))
+		 if (TextureImage2[0]=LoadBMP("Data/TileFloorTexture.bmp", L"Data/TileFloorTexture.bmp"))
         {
                 Status2=TRUE;                            
 
@@ -649,6 +672,37 @@ int LoadGLTextures()
 				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST);
 				gluBuild2DMipmaps(GL_TEXTURE_2D, 3, TextureImage2[0]->sizeX, TextureImage2[0]->sizeY, GL_RGB, GL_UNSIGNED_BYTE, TextureImage2[0]->data);
+        }
+		  if (TextureImage3[0]=LoadBMP("Data/bricks2.bmp", L"Data/bricks2.bmp"))
+        {
+                Status3=TRUE;                            
+
+                glGenTextures(3, &texture3[0]);          
+
+				glBindTexture(GL_TEXTURE_2D, texture3[0]);
+				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+				glTexImage2D(GL_TEXTURE_2D, 0, 3, TextureImage3[0]->sizeX, TextureImage3[0]->sizeY, 0, GL_RGB, GL_UNSIGNED_BYTE, TextureImage3[0]->data);
+                
+                glBindTexture(GL_TEXTURE_2D, texture3[1]);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+                glTexImage2D(GL_TEXTURE_2D, 0, 3, TextureImage3[0]->sizeX, TextureImage3[0]->sizeY, 0, GL_RGB, GL_UNSIGNED_BYTE, TextureImage3[0]->data);
+
+				
+				glBindTexture(GL_TEXTURE_2D, texture3[2]);
+				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST);
+				gluBuild2DMipmaps(GL_TEXTURE_2D, 3, TextureImage3[0]->sizeX, TextureImage3[0]->sizeY, GL_RGB, GL_UNSIGNED_BYTE, TextureImage3[0]->data);
+        }
+		  if (TextureImage3[0]) 
+        {
+                if (TextureImage3[0]->data)              
+                {
+                        free(TextureImage3[0]->data);    
+                }
+
+                free(TextureImage3[0]);                  
         }
 		 if (TextureImage2[0]) 
         {
@@ -868,7 +922,7 @@ void Fire()
 	Vector3 smer = mView - mPos;
 	Vector3 pozicija = Vector3(mPos.x  + smer.x * BULLETSPEED,1,mPos.z  + smer.z * BULLETSPEED);
 
-
+	/*
 	double rt=0;
 	Vector3 norma;
 	double uveloc1 = smer * BULLETSPEED;	//je krat?
@@ -881,7 +935,7 @@ void Fire()
 		
 	}
 	intersectionPoint=pozicija+uveloc1*rt;
-	
+	*/
 	
 	return;
 }
@@ -943,7 +997,7 @@ LRESULT CALLBACK WndProc(	HWND	hWnd,			UINT	uMsg,			WPARAM	wParam,			LPARAM	lPar
 			{
 	            mouse_x = LOWORD(lParam);          
 				mouse_y = HIWORD(lParam);
-				Fire();
+				//Fire();
 			}
 		break;
 	}
