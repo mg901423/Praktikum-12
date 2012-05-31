@@ -154,7 +154,7 @@ void CPlayState::LoadGLTextures()
 		
 		
 			texture[2] = loadtexture("Data/bricks2.bmp", 512, 512);
-			texture[3] = loadtexture("Data/portal.bmp", 615, 615);
+			texture[3] = loadtexture("Data/portal2.bmp", 512, 512);
 			
 	/*
 	 int Status=FALSE;  
@@ -446,14 +446,41 @@ void CPlayState::OnKeyDown(WPARAM wKey)
 
 void CPlayState::Update(DWORD dwCurrentTime)
 {
-	//preveri collision
-	if (mPos.x > 2.77 || mPos.x < -2.77 || mPos.z > 2.77 || mPos.z < -2.77)
+	if (mPos.z >0 && mPos.z < 1 && mPos.x >2.77)
 	{
-		mPos = playerPreviousPosition;
+		//rotiraj levo za 90 stopinj
+		Vector3 vVector = mView - mPos;	
+
+		mView.z = (float)(mPos.z + sin(-90.0)*vVector.x + cos(-90.0)*vVector.z);
+		mView.x = (float)(mPos.x + cos(-90.0)*vVector.x - sin(-90.0)*vVector.z);
+
+		mPos.x = 0.5;
+		mPos.z = 2.5;
+		
+	}
+	else if (mPos.x>0 && mPos.x <1 && mPos.z >2.77)
+	{
+		//rotiraj desno za 90 stopinj
+		Vector3 vVector = mView - mPos;	
+
+		mView.z = (float)(mPos.z + sin(90.0)*vVector.x + cos(90.0)*vVector.z);
+		mView.x = (float)(mPos.x + cos(90.0)*vVector.x - sin(90.0)*vVector.z);
+
+		mPos.x = 2.5;
+		mPos.z = 0.5;
+		
 	}
 	else
 	{
-		playerPreviousPosition = mPos;
+		//preveri collision
+		if (mPos.x > 2.77 || mPos.x < -2.77 || mPos.z > 2.77 || mPos.z < -2.77)
+		{
+			mPos = playerPreviousPosition;
+		}
+		else
+		{
+			playerPreviousPosition = mPos;
+		}
 	}
 }
 
@@ -478,14 +505,48 @@ GL_STENCIL_BUFFER_BIT); //clear the buffers
 			gluLookAt(mPos.x,  mPos.y,  mPos.z,	
 			  mView.x, mView.y, mView.z,	
 			  mUp.x,   mUp.y,   mUp.z);
+			glTranslatef(xtrans, ytrans, ztrans);
+	
+		//start
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); //disable the color mask
+		glDepthMask(GL_FALSE); //disable the depth mask
 
-			
-	
-	glTranslatef(xtrans, ytrans, ztrans);
-	
-	numtriangles = sector1.numtriangles;
-	
-	
+		glEnable(GL_STENCIL_TEST); //enable the stencil testing
+
+		glStencilFunc(GL_ALWAYS, 1, 0xFFFFFFFF);
+		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE); //setthe stencil buffer to replace our next lot of data
+
+		glPushMatrix();
+		//glColor4f(1,1,1,0.7);
+		glBindTexture(GL_TEXTURE_2D,texture[3]);
+		glBegin(GL_QUADS);
+			glTexCoord2f(1,0);
+		glVertex3f(3,0,1);
+			glTexCoord2f(1,1);
+		glVertex3f(3,0,0);
+			glTexCoord2f(0,1);
+		glVertex3f(3,1,0);  
+		    glTexCoord2f(0,0);
+		glVertex3f(3,1,1);
+		glEnd();
+		glPopMatrix();
+
+	    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); //enablethe color mask
+		glDepthMask(GL_TRUE); //enable the depth mask
+
+		glStencilFunc(GL_EQUAL, 1, 0xFFFFFFFF);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP); //set the stencilbuffer to keep our next lot of data
+
+		glDisable(GL_DEPTH_TEST); //disable depth testing of thereflection
+		glPushMatrix();
+		glScalef(-1.0f, 1.0f, 1.0f); //flip the reflection 
+
+		glTranslatef(0,0,0); //translate the reflection onto thedrawing plane
+		//glRotatef(40,-1,0,0); //rotate the reflection
+		//draw the square as our reflection
+		
+
+		numtriangles = sector1.numtriangles;
 	// narisemo vse trikotnike
 	for (int i = 0; i < numtriangles; i++)
 	{
@@ -530,20 +591,101 @@ GL_STENCIL_BUFFER_BIT); //clear the buffers
 		glEnd();
 		glPopMatrix();
 	}
+
+		glPopMatrix();
+		glEnable(GL_DEPTH_TEST); //enable the depth testing
+
+		glDisable(GL_STENCIL_TEST); //disable the stencil testing
+
+		//end
+
+		glEnable(GL_BLEND); //enable alpha blending
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //set the blending function
+    glPushMatrix();
+		glBindTexture(GL_TEXTURE_2D,texture[3]);
+		glBegin(GL_QUADS);
+			glTexCoord2f(1,0);
+		glVertex3f(1,0,3);
+			glTexCoord2f(1,1);
+		glVertex3f(0,0,3);
+			glTexCoord2f(0,1);
+		glVertex3f(0,1,3);
+			glTexCoord2f(0,0);
+		glVertex3f(1,1,3);
+		glEnd();
+		glPopMatrix();
 	
-	/*glPushMatrix();
+		
+		glPushMatrix();
+		glBindTexture(GL_TEXTURE_2D,texture[3]);
+		glBegin(GL_QUADS);
+			glTexCoord2f(1,0);
+		glVertex3f(3,0,1);
+			glTexCoord2f(1,1);
+		glVertex3f(3,0,0);
+			glTexCoord2f(0,1);
+		glVertex3f(3,1,0);  
+		    glTexCoord2f(0,0);
+		glVertex3f(3,1,1);
+		glEnd();
+		glPopMatrix();
+		
+    glDisable(GL_BLEND); //disable alpha blending
 	
-	glBegin(GL_QUADS);
-		glColor3f(1,1,1);
-		glVertex3f(-1,-1,0);
-       
-		glVertex3f(-1,1,0);
-       
-		glVertex3f(1,1,0);
-        
-		glVertex3f(1,-1,0);
-    glEnd();
-	glPopMatrix();*/
+	
+		
+
+	//***********************************************
+
+
+    numtriangles = sector1.numtriangles;
+	// narisemo vse trikotnike
+	for (int i = 0; i < numtriangles; i++)
+	{
+		if (i == 0 || i == 1)
+		{
+			glBindTexture(GL_TEXTURE_2D, texture[0]);
+		}
+		else if (i == 2 || i== 3)
+		{
+			glBindTexture(GL_TEXTURE_2D, texture[1]);
+		}
+		else
+		{
+			glBindTexture(GL_TEXTURE_2D, texture[2]);
+		}
+		glPushMatrix();
+		glBegin(GL_TRIANGLES);
+			glNormal3f( 0.0f, 0.0f, 1.0f);
+			x_m = sector1.triangle[i].vertex[0].x;
+			y_m = sector1.triangle[i].vertex[0].y;
+			z_m = sector1.triangle[i].vertex[0].z;
+			u_m = sector1.triangle[i].vertex[0].u;
+			v_m = sector1.triangle[i].vertex[0].v;
+			glTexCoord2f(u_m,v_m); 
+			glVertex3f(x_m,y_m,z_m);
+			
+			x_m = sector1.triangle[i].vertex[1].x;
+			y_m = sector1.triangle[i].vertex[1].y;
+			z_m = sector1.triangle[i].vertex[1].z;
+			u_m = sector1.triangle[i].vertex[1].u;
+			v_m = sector1.triangle[i].vertex[1].v;
+			glTexCoord2f(u_m,v_m); 
+			glVertex3f(x_m,y_m,z_m);
+			
+			x_m = sector1.triangle[i].vertex[2].x;
+			y_m = sector1.triangle[i].vertex[2].y;
+			z_m = sector1.triangle[i].vertex[2].z;
+			u_m = sector1.triangle[i].vertex[2].u;
+			v_m = sector1.triangle[i].vertex[2].v;
+			glTexCoord2f(u_m,v_m); 
+			glVertex3f(x_m,y_m,z_m);
+		glEnd();
+		glPopMatrix();
+	}
+
+	
+
 }
 
 
